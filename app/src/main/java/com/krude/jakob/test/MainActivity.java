@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.NotificationManagerCompat;
@@ -41,9 +42,19 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        SharedPreferences prefs = this.getSharedPreferences(
+                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
         textView = findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
+        downloadedText = prefs.getString("downloadedText","No current schedule");
+        textView.setText(downloadedText);
         Switch switchWidget = findViewById(R.id.switchWidget);
+        boolean state;
+        state = prefs.getBoolean("switchState", false);
+        if(state){
+            switchWidget.setChecked(true);
+        }
+
         switchWidget.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
@@ -53,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
                 }
             }
         });
+
         directory = this.getFilesDir();
         //registerReceiver();
         //asyncTask.delegate = this;
@@ -60,39 +72,48 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         createNotificationChannels();
     }
 
-    /*
     @Override
-    public void processFinish(String output){
-        textView.setText(output);
-        //Here you will receive the result fired from async class
-        //of onPostExecute(result) method.
+    protected void onStop() {
+        super.onStop();
+        SharedPreferences prefs = this.getSharedPreferences(
+                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
+        Switch switchWidget = findViewById(R.id.switchWidget);
+        prefs.edit().putBoolean("switchState", switchWidget.isChecked()).apply();
     }
 
-    public void downloadPdf (){
-        Context context = MainActivity.this;
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.INTERNET)
-                != PackageManager.PERMISSION_GRANTED) {
-            System.err.println("Permission Missing");
-        } else{
-            System.out.println("Permission granted");
+    /*
+        @Override
+        public void processFinish(String output){
+            textView.setText(output);
+            //Here you will receive the result fired from async class
+            //of onPostExecute(result) method.
         }
-        String fileUrl ="https://www.graues-kloster.de/files/ovp_1.pdf";   // -> http://maven.apache.org/maven-1.x/maven.pdf
-        String fileName = "ovp_1.pdf";  // -> maven.pdf
 
-        File pdfFile = new File(directory, fileName);
-        try {
-            boolean createNewFileWorked = pdfFile.createNewFile();
-            //TODO
-            fileLocation = pdfFile.getAbsolutePath();
-        } catch (IOException e) {
-            e.printStackTrace();
+        public void downloadPdf (){
+            Context context = MainActivity.this;
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.INTERNET)
+                    != PackageManager.PERMISSION_GRANTED) {
+                System.err.println("Permission Missing");
+            } else{
+                System.out.println("Permission granted");
+            }
+            String fileUrl ="https://www.graues-kloster.de/files/ovp_1.pdf";   // -> http://maven.apache.org/maven-1.x/maven.pdf
+            String fileName = "ovp_1.pdf";  // -> maven.pdf
+
+            File pdfFile = new File(directory, fileName);
+            try {
+                boolean createNewFileWorked = pdfFile.createNewFile();
+                //TODO
+                fileLocation = pdfFile.getAbsolutePath();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //FileDownloader.downloadFile("https://www.graues-kloster.de/files/ovp_1.pdf", pdfFile);
+            Toast.makeText(context, "Downloading file",
+                    Toast.LENGTH_LONG).show();
+            asyncTask.execute(fileUrl, fileLocation);
         }
-        //FileDownloader.downloadFile("https://www.graues-kloster.de/files/ovp_1.pdf", pdfFile);
-        Toast.makeText(context, "Downloading file",
-                Toast.LENGTH_LONG).show();
-        asyncTask.execute(fileUrl, fileLocation);
-    }
-    */
+        */
     public void startAlarm(){
         DialogFragment timePickerFragment = new TimePickerFragment();
         timePickerFragment.show(getSupportFragmentManager(), "time picker");
@@ -171,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
 
         Intent intent1 = new Intent(getApplicationContext(),AlertReceiver.class);
         alarmUp = (PendingIntent.getBroadcast(getApplicationContext(), 1, intent1, PendingIntent.FLAG_NO_CREATE) != null);
-        String out = "alarm is " + (alarmUp ? "" : "not") + " canceled.";
+        String out = "alarm is " + (alarmUp ? "not" : "") + " canceled.";
         textView.setText(out);
 
     }

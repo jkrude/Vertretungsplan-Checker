@@ -105,6 +105,8 @@ class FileScanner{
         } catch (Exception e) {
             e.printStackTrace();
         }
+        AlertReceiver.pendingResult.finish();
         return resultText;
+
     }
 }

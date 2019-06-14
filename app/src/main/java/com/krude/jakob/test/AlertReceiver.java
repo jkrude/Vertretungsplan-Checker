@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v4.app.NotificationCompat;
 import android.widget.Toast;
 
@@ -18,6 +19,7 @@ import java.io.IOException;
 public class AlertReceiver extends BroadcastReceiver implements AsyncResponse{
     public static DownloadFile asyncTask =new DownloadFile();
     Context gl_context;
+    public static PendingResult pendingResult;
 
 
     @Override
@@ -25,6 +27,7 @@ public class AlertReceiver extends BroadcastReceiver implements AsyncResponse{
         asyncTask.delegate = this;
         gl_context = context;
         Toast.makeText(context, "Received",Toast.LENGTH_SHORT).show();
+        pendingResult = goAsync();
         startProcess();
     }
     private void startProcess(){
@@ -41,6 +44,8 @@ public class AlertReceiver extends BroadcastReceiver implements AsyncResponse{
         }
         //FileDownloader.downloadFile("https://www.graues-kloster.de/files/ovp_1.pdf", pdfFile);
         asyncTask.execute(fileUrl, MainActivity.fileLocation);
+        Toast.makeText(gl_context, "started Execute",Toast.LENGTH_SHORT).show();
+
     }
 
     public void showNotification(Context context, String body) {
@@ -84,17 +89,22 @@ public class AlertReceiver extends BroadcastReceiver implements AsyncResponse{
 
     @Override
     public void processFinish(String output) {
+        Toast.makeText(gl_context, "ProcessFinish",Toast.LENGTH_SHORT).show();
+
         String notification_message;
         if(output.equals("Class 11 is not affected.")){
             notification_message = "Vertretungsplan morgen betrifft dich nicht";
         }else{
             notification_message = "Im Vertretungsplan könnte was relevantes stehen";
         }
-        Toast.makeText(gl_context, "Worked",Toast.LENGTH_SHORT).show();
         showNotification(gl_context, notification_message);
         //writeToFile(output);
 
+        SharedPreferences prefs = gl_context.getSharedPreferences(
+                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
+        prefs.edit().putString("downloadedText",output).apply();
         MainActivity.downloadedText = output;
+
         gl_context = null;
     }
 
