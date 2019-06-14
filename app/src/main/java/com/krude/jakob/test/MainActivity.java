@@ -4,21 +4,26 @@ import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 import java.io.File;
 import java.util.Calendar;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener {
 
     public static final String CHANNEL_ID = "CHANNEL_0";
 
@@ -38,6 +43,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         textView = findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
+        Switch switchWidget = findViewById(R.id.switchWidget);
+        switchWidget.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    startAlarm();
+                } else {
+                    cancelAlarm();
+                }
+            }
+        });
         directory = this.getFilesDir();
         //registerReceiver();
         //asyncTask.delegate = this;
@@ -78,6 +93,12 @@ public class MainActivity extends AppCompatActivity {
         asyncTask.execute(fileUrl, fileLocation);
     }
     */
+    public void startAlarm(){
+        DialogFragment timePickerFragment = new TimePickerFragment();
+        timePickerFragment.show(getSupportFragmentManager(), "time picker");
+    }
+
+
     public void loadText(View view){
         /*
         if(!lastSchedule.isEmpty()){
@@ -111,10 +132,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-    
-    public void setAlarm(View view){
 
-        boolean alarmUp = (PendingIntent.getBroadcast(MainActivity.this, 1,
+
+    public void setAlarm(int hour, int minute){
+
+        boolean alarmUp = (PendingIntent.getBroadcast(getApplicationContext(), 1,
                 new Intent(this,AlertReceiver.class),
                 PendingIntent.FLAG_NO_CREATE) != null);
         if(alarmUp){
@@ -122,37 +144,35 @@ public class MainActivity extends AppCompatActivity {
         }
         Calendar c = Calendar.getInstance();
 
-        c.set(Calendar.HOUR_OF_DAY, 8); // For 1 PM or 2 PM
-        c.set(Calendar.MINUTE,59);
+        c.set(Calendar.HOUR_OF_DAY, hour); // For 1 PM or 2 PM
+        c.set(Calendar.MINUTE, minute);
         c.set(Calendar.SECOND, 0);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this,AlertReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 1, intent, 0);
+        Intent intent = new Intent(getApplicationContext(), AlertReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 1, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         alarmManager.setExact(AlarmManager.RTC_WAKEUP,c.getTimeInMillis(),pendingIntent);
-        Toast.makeText(this,"set Alarm to "+c.get(Calendar.HOUR)+": "+ c.get(Calendar.MINUTE),Toast.LENGTH_SHORT).show();
+
+        Toast.makeText(this,"set Alarm to "+hour+": "+ minute,Toast.LENGTH_SHORT).show();
     }
 
-    public void cancelAlarm(View view){
-        boolean alarmUp = (PendingIntent.getBroadcast(MainActivity.this, 1,
+    public void cancelAlarm(){
+        boolean alarmUp = (PendingIntent.getBroadcast(getApplicationContext(), 1,
                 new Intent(this,AlertReceiver.class),
                 PendingIntent.FLAG_NO_CREATE) != null);
         if(!alarmUp){
             return;
         }
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(this,AlertReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 1, intent, 0);
+        Intent intent = new Intent(getApplicationContext(),AlertReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 1, intent, PendingIntent.FLAG_CANCEL_CURRENT);
         alarmManager.cancel(pendingIntent);
+        pendingIntent.cancel();
         //unregisterReceiver();
 
-        String out = "Alarm canceled";
+        Intent intent1 = new Intent(getApplicationContext(),AlertReceiver.class);
+        alarmUp = (PendingIntent.getBroadcast(getApplicationContext(), 1, intent1, PendingIntent.FLAG_NO_CREATE) != null);
+        String out = "alarm is " + (alarmUp ? "" : "not") + " canceled.";
         textView.setText(out);
-        alarmUp = (PendingIntent.getBroadcast(MainActivity.this, 1,
-                new Intent(this,AlertReceiver.class),
-                PendingIntent.FLAG_NO_CREATE) != null);
-        if(!alarmUp){
-            int x =1;
-        }
 
     }
 
@@ -168,6 +188,11 @@ public class MainActivity extends AppCompatActivity {
             NotificationManager manager = getSystemService(NotificationManager.class);
             manager.createNotificationChannel(channel1);
         }
+    }
+
+    @Override
+    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+            setAlarm(hourOfDay, minute);
     }
 
 /*
