@@ -1,17 +1,13 @@
 package com.krude.jakob.test;
 
-import android.Manifest;
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-//import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.v4.app.NotificationManagerCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
@@ -19,19 +15,20 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.io.File;
-import java.io.IOException;
 import java.util.Calendar;
 
 
-public class MainActivity extends AppCompatActivity implements AsyncResponse {
+public class MainActivity extends AppCompatActivity {
 
     public static final String CHANNEL_ID = "CHANNEL_0";
 
-    public static DownloadFile asyncTask =new DownloadFile();
+    //public static DownloadFile asyncTask =new DownloadFile();
     public static NotificationManagerCompat notificationManager;
     public static File directory;
     public static String fileLocation;
+    public static String lastSchedule = "";
     private TextView textView;
+    public static String downloadedText = "";
 
     //private BroadcastReceiver receiver = null;
 
@@ -43,12 +40,12 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
         textView.setMovementMethod(new ScrollingMovementMethod());
         directory = this.getFilesDir();
         //registerReceiver();
-        asyncTask.delegate = this;
+        //asyncTask.delegate = this;
         notificationManager = NotificationManagerCompat.from(this);
         createNotificationChannels();
     }
 
-
+    /*
     @Override
     public void processFinish(String output){
         textView.setText(output);
@@ -80,7 +77,40 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
                 Toast.LENGTH_LONG).show();
         asyncTask.execute(fileUrl, fileLocation);
     }
+    */
+    public void loadText(View view){
+        /*
+        if(!lastSchedule.isEmpty()){
+            if(!lastSchedule.equals("FileNotFound") && !lastSchedule.equals("InputOutput")){
+                FileInputStream fis;
+                try {
+                    fis = openFileInput("test.txt");
 
+                StringBuffer fileContent = new StringBuffer("");
+
+                byte[] buffer = new byte[1024];
+                int n;
+                while ((n = fis.read(buffer)) != -1)
+                {
+                    fileContent.append(new String(buffer, 0,n));
+                }
+
+                textView.setText(fileContent);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        */
+        if(!downloadedText.isEmpty()){
+            textView.setText(downloadedText);
+        } else{
+            textView.setText("Sorry there is no current version.");
+        }
+
+    }
     
     public void setAlarm(View view){
 
@@ -92,15 +122,14 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
         }
         Calendar c = Calendar.getInstance();
 
-        c.set(Calendar.HOUR_OF_DAY, 15); // For 1 PM or 2 PM
-        c.set(Calendar.MINUTE,11);
+        c.set(Calendar.HOUR_OF_DAY, 8); // For 1 PM or 2 PM
+        c.set(Calendar.MINUTE,59);
         c.set(Calendar.SECOND, 0);
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(this,AlertReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 1, intent, 0);
         alarmManager.setExact(AlarmManager.RTC_WAKEUP,c.getTimeInMillis(),pendingIntent);
-        Toast.makeText(this,"set Alarm to"+c.get(Calendar.HOUR),Toast.LENGTH_SHORT).show();
-        //downloadPdf();
+        Toast.makeText(this,"set Alarm to "+c.get(Calendar.HOUR)+": "+ c.get(Calendar.MINUTE),Toast.LENGTH_SHORT).show();
     }
 
     public void cancelAlarm(View view){
@@ -118,6 +147,12 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
 
         String out = "Alarm canceled";
         textView.setText(out);
+        alarmUp = (PendingIntent.getBroadcast(MainActivity.this, 1,
+                new Intent(this,AlertReceiver.class),
+                PendingIntent.FLAG_NO_CREATE) != null);
+        if(!alarmUp){
+            int x =1;
+        }
 
     }
 
