@@ -195,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         alarmManager.setExact(AlarmManager.RTC_WAKEUP,c.getTimeInMillis(),pendingIntent);
 
         Toast.makeText(this,"set Alarm to "+hour+": "+ minute,Toast.LENGTH_SHORT).show();
+
     }
 
 

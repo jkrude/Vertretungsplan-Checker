@@ -30,7 +30,6 @@ public class PdfJobService extends JobService implements AsyncResponse{
         startProcess();
         //Intent service = new Intent(getApplicationContext(), PdfService.class);
         //getApplicationContext().startService(service);
-        //Util.scheduleJob(getApplicationContext()); // reschedule the job
         return true;
     }
 
