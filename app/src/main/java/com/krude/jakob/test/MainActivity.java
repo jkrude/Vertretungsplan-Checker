@@ -5,9 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
-import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
-import android.content.ComponentName;
 
 import android.content.Context;
 import android.content.Intent;
@@ -25,7 +23,6 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
-import java.io.File;
 import java.util.Calendar;
 
 
@@ -35,15 +32,10 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     private static final int PDF_JOB_ID = 1;
     private static final String TAG = "MainActivity";
 
-    //public static DownloadFile asyncTask =new DownloadFile();
     public static NotificationManagerCompat notificationManager;
-    public static File directory;
-    public static String fileLocation;
-    public static String lastSchedule = "";
     private TextView textView;
     public static String downloadedText = "";
 
-    //private BroadcastReceiver receiver = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,9 +54,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         Switch switchWidget = findViewById(R.id.switchWidget);
         boolean state;
         state = prefs.getBoolean("switchState", false);
-
         switchWidget.setChecked(state);
-
 
         switchWidget.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -78,10 +68,6 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
             }
         });
 
-        directory = this.getFilesDir();
-
-        //registerReceiver();
-        //asyncTask.delegate = this;
         notificationManager = NotificationManagerCompat.from(this);
         createNotificationChannels();
     }
@@ -101,39 +87,6 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         setAlarm(hourOfDay, minute);
     }
 
-    /*
-        @Override
-        public void processFinish(String output){
-            textView.setText(output);
-            //Here you will receive the result fired from async class
-            //of onPostExecute(result) method.
-        }
-
-        public void downloadPdf (){
-            Context context = MainActivity.this;
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.INTERNET)
-                    != PackageManager.PERMISSION_GRANTED) {
-                System.err.println("Permission Missing");
-            } else{
-                System.out.println("Permission granted");
-            }
-            String fileUrl ="https://www.graues-kloster.de/files/ovp_1.pdf";   // -> http://maven.apache.org/maven-1.x/maven.pdf
-            String fileName = "ovp_1.pdf";  // -> maven.pdf
-
-            File pdfFile = new File(directory, fileName);
-            try {
-                boolean createNewFileWorked = pdfFile.createNewFile();
-                //TODO
-                fileLocation = pdfFile.getAbsolutePath();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            //FileDownloader.downloadFile("https://www.graues-kloster.de/files/ovp_1.pdf", pdfFile);
-            Toast.makeText(context, "Downloading file",
-                    Toast.LENGTH_LONG).show();
-            asyncTask.execute(fileUrl, fileLocation);
-        }
-        */
     public void startAlarm(){
         DialogFragment timePickerFragment = new TimePickerFragment();
         timePickerFragment.show(getSupportFragmentManager(), "time picker");
@@ -141,37 +94,9 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
 
 
     public void loadText(View view){
-        /*
-        if(!lastSchedule.isEmpty()){
-            if(!lastSchedule.equals("FileNotFound") && !lastSchedule.equals("InputOutput")){
-                FileInputStream fis;
-                try {
-                    fis = openFileInput("test.txt");
-
-                StringBuffer fileContent = new StringBuffer("");
-
-                byte[] buffer = new byte[1024];
-                int n;
-                while ((n = fis.read(buffer)) != -1)
-                {
-                    fileContent.append(new String(buffer, 0,n));
-                }
-
-                textView.setText(fileContent);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        */
-        if(!downloadedText.isEmpty()){
-            textView.setText(downloadedText);
-        } else{
-            textView.setText("Sorry there is no current version.");
-        }
-
+       SharedPreferences prefs = getSharedPreferences(
+               "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
+       textView.setText(prefs.getString("downloadedText", "failed"));
     }
 
 
@@ -198,28 +123,6 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     }
 
 
-    public void cancelAlarm(){
-        boolean alarmUp = (PendingIntent.getBroadcast(getApplicationContext(), 1,
-                new Intent(this,AlertReceiver.class),
-                PendingIntent.FLAG_NO_CREATE) != null);
-        if(!alarmUp){
-            return;
-        }
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(getApplicationContext(),AlertReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 1, intent, PendingIntent.FLAG_CANCEL_CURRENT);
-        alarmManager.cancel(pendingIntent);
-        pendingIntent.cancel();
-        //unregisterReceiver();
-
-        Intent intent1 = new Intent(getApplicationContext(),AlertReceiver.class);
-        alarmUp = (PendingIntent.getBroadcast(getApplicationContext(), 1, intent1, PendingIntent.FLAG_NO_CREATE) != null);
-        String out = "alarm is " + (alarmUp ? "not" : "") + " canceled.";
-        textView.setText(out);
-
-    }
-
-
     private void createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel1 = new NotificationChannel(
@@ -232,22 +135,6 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
             NotificationManager manager = getSystemService(NotificationManager.class);
             manager.createNotificationChannel(channel1);
         }
-    }
-
-
-    private void startJob(){
-        JobScheduler jobScheduler =
-                (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
-        ComponentName componentName =   new ComponentName(this, PdfJobService.class);
-        JobInfo jobInfo = new JobInfo.Builder(PDF_JOB_ID, componentName)
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                //.setPeriodic(60000,60000)
-                //.setPeriodic(86400000 )
-                .setPersisted(true)
-                .build();
-        jobScheduler.schedule(jobInfo);
-        Log.d(TAG, "scheduled Job");
-
     }
 
 

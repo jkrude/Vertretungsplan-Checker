@@ -32,8 +32,6 @@ public class DownloadFile extends AsyncTask<String, Void, String> {
 
         FileDownloader.downloadFile(fileUrl, fileName);
         Log.d(TAG, "Downloaded File");
-        //Toast.makeText(MainActivity.globalContext, "Downloaded File", Toast.LENGTH_SHORT).show(); // For example
-        //Toast.makeText(MainActivity.globalContext, "Displayed File", Toast.LENGTH_SHORT).show(); // For example
 
         return FileScanner.scanPdf(fileUrl);
 
