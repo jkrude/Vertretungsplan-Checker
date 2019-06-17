@@ -33,7 +33,7 @@ public class AlertReceiver extends BroadcastReceiver{
 
         JobInfo jobInfo = new JobInfo.Builder(PDF_JOB_ID, componentName)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                //.setPeriodic(60000,60000)
+                .setPeriodic(1000*60*15)
                 //.setPeriodic(86400000 )
                 .setPersisted(true)
                 .build();

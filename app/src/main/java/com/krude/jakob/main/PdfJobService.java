@@ -18,13 +18,14 @@ import java.io.IOException;
  */
 public class PdfJobService extends JobService implements AsyncResponse{
     private static final String TAG = "JobService";
-    private static DownloadFile asyncTask = new DownloadFile();
+    private static DownloadFile asyncTask;
     private JobParameters parameters;
 
     @Override
     public boolean onStartJob(JobParameters params) {
         Log.d(TAG, "started Job");
         parameters = params;
+        asyncTask = new DownloadFile();
         asyncTask.delegate = this;
 
         startProcess();
