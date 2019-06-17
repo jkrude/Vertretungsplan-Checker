@@ -1,10 +1,15 @@
 package com.krude.jakob.test;
 
 import android.app.AlarmManager;
+import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -14,6 +19,7 @@ import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.Switch;
@@ -27,6 +33,8 @@ import java.util.Calendar;
 public class MainActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener {
 
     public static final String CHANNEL_ID = "CHANNEL_0";
+    private static final int LOAD_PDF_JOB_ID = 1;
+    private static final String TAG = "MainActivity";
 
     //public static DownloadFile asyncTask =new DownloadFile();
     public static NotificationManagerCompat notificationManager;
@@ -44,10 +52,14 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         setContentView(R.layout.activity_main);
         SharedPreferences prefs = this.getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
+
+
         textView = findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
+
         downloadedText = prefs.getString("downloadedText","No current schedule");
         textView.setText(downloadedText);
+
         Switch switchWidget = findViewById(R.id.switchWidget);
         boolean state;
         state = prefs.getBoolean("switchState", false);
@@ -58,14 +70,17 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         switchWidget.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    startAlarm();
+                    startJob();
+                    //startAlarm();
                 } else {
-                    cancelAlarm();
+                    cancelJob();
+                    //cancelAlarm();
                 }
             }
         });
 
         directory = this.getFilesDir();
+
         //registerReceiver();
         //asyncTask.delegate = this;
         notificationManager = NotificationManagerCompat.from(this);
@@ -79,6 +94,12 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
         Switch switchWidget = findViewById(R.id.switchWidget);
         prefs.edit().putBoolean("switchState", switchWidget.isChecked()).apply();
+    }
+
+
+    @Override
+    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+        setAlarm(hourOfDay, minute);
     }
 
     /*
@@ -176,6 +197,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         Toast.makeText(this,"set Alarm to "+hour+": "+ minute,Toast.LENGTH_SHORT).show();
     }
 
+
     public void cancelAlarm(){
         boolean alarmUp = (PendingIntent.getBroadcast(getApplicationContext(), 1,
                 new Intent(this,AlertReceiver.class),
@@ -197,6 +219,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
 
     }
 
+
     private void createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel1 = new NotificationChannel(
@@ -211,28 +234,28 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         }
     }
 
-    @Override
-    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-            setAlarm(hourOfDay, minute);
+
+    private void startJob(){
+        JobScheduler jobScheduler =
+                (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        ComponentName componentName =   new ComponentName(this, PdfJobService.class);
+        JobInfo jobInfo = new JobInfo.Builder(LOAD_PDF_JOB_ID, componentName)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                //.setPeriodic(60000,60000)
+                //.setPeriodic(86400000 )
+                .setPersisted(true)
+                .build();
+        jobScheduler.schedule(jobInfo);
+        Log.d(TAG, "sheduled Job");
+
     }
 
-/*
-    public void registerReceiver(){
 
-        if(receiver == null){
-            IntentFilter intentFilter = new IntentFilter("action_name");
-            intentFilter.addAction("Alarm_Intent");
-            receiver = new AlertReceiver();
-            this.registerReceiver(receiver,intentFilter);
-        }
+    private void cancelJob(){
+        JobScheduler jobScheduler =
+                (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.cancel(LOAD_PDF_JOB_ID);
+        Log.d(TAG, "canceled Job");
     }
-
-    public void unregisterReceiver(){
-        if(receiver != null){
-            this.unregisterReceiver(receiver);
-            receiver = null;
-        }
-    }
-*/
 
 }

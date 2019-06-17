@@ -24,6 +24,7 @@ public class AlertReceiver extends BroadcastReceiver implements AsyncResponse{
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        android.os.Debug.waitForDebugger();
         asyncTask.delegate = this;
         gl_context = context;
         Toast.makeText(context, "Received",Toast.LENGTH_SHORT).show();
@@ -88,7 +89,7 @@ public class AlertReceiver extends BroadcastReceiver implements AsyncResponse{
     }
 
     @Override
-    public void processFinish(String output) {
+    public void processFinished(String output, boolean success) {
         Toast.makeText(gl_context, "ProcessFinish",Toast.LENGTH_SHORT).show();
 
         String notification_message;
@@ -107,5 +108,4 @@ public class AlertReceiver extends BroadcastReceiver implements AsyncResponse{
 
         gl_context = null;
     }
-
 }
