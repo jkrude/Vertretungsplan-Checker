@@ -1,4 +1,4 @@
-package com.krude.jakob.test;
+package com.krude.jakob.main;
 
 import android.app.Notification;
 import android.app.NotificationManager;

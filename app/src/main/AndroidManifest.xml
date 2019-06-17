@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.krude.jakob.test">
+    package="com.krude.jakob.main">
 
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:allowBackup="true"
@@ -17,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".MainActivity">
+        <activity android:name="com.krude.jakob.main.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -25,13 +21,11 @@
         </activity>
 
         <service
-            android:name=".PdfJobService"
+            android:name="com.krude.jakob.main.PdfJobService"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="true"/>
 
-        <receiver android:name=".AlertReceiver"/>
+        <receiver android:name="com.krude.jakob.main.AlertReceiver"/>
     </application>
-
-
 
 </manifest>

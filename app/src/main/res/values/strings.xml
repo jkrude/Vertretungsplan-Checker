@@ -1,5 +1,3 @@
 <resources>
     <string name="app_name">Test</string>
-    <string name="channel_name">Vertretungsplan Updater</string>
-    <string name="channel_description">Vertretungsplan Update</string>
 </resources>
