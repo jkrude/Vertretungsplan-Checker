@@ -1,7 +1,6 @@
 package com.krude.jakob.test;
 
 import android.app.AlarmManager;
-import android.app.DownloadManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -33,7 +32,7 @@ import java.util.Calendar;
 public class MainActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener {
 
     public static final String CHANNEL_ID = "CHANNEL_0";
-    private static final int LOAD_PDF_JOB_ID = 1;
+    private static final int PDF_JOB_ID = 1;
     private static final String TAG = "MainActivity";
 
     //public static DownloadFile asyncTask =new DownloadFile();
@@ -53,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         SharedPreferences prefs = this.getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
 
-
+        prefs.edit().putInt("PDF_JOB_ID", PDF_JOB_ID).apply();
         textView = findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
 
@@ -63,15 +62,15 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         Switch switchWidget = findViewById(R.id.switchWidget);
         boolean state;
         state = prefs.getBoolean("switchState", false);
-        if(state){
-            switchWidget.setChecked(true);
-        }
+
+        switchWidget.setChecked(state);
+
 
         switchWidget.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    startJob();
-                    //startAlarm();
+                    //startJob();
+                    startAlarm();
                 } else {
                     cancelJob();
                     //cancelAlarm();
@@ -240,14 +239,14 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         JobScheduler jobScheduler =
                 (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
         ComponentName componentName =   new ComponentName(this, PdfJobService.class);
-        JobInfo jobInfo = new JobInfo.Builder(LOAD_PDF_JOB_ID, componentName)
+        JobInfo jobInfo = new JobInfo.Builder(PDF_JOB_ID, componentName)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 //.setPeriodic(60000,60000)
                 //.setPeriodic(86400000 )
                 .setPersisted(true)
                 .build();
         jobScheduler.schedule(jobInfo);
-        Log.d(TAG, "sheduled Job");
+        Log.d(TAG, "scheduled Job");
 
     }
 
@@ -255,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     private void cancelJob(){
         JobScheduler jobScheduler =
                 (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
-        jobScheduler.cancel(LOAD_PDF_JOB_ID);
+        jobScheduler.cancel(PDF_JOB_ID);
         Log.d(TAG, "canceled Job");
     }
 
