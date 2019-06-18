@@ -3,9 +3,6 @@ package com.krude.jakob.main;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.parser.PdfTextExtractor;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -16,15 +13,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 
-
-public class DownloadFile extends AsyncTask<String, Void, String> {
+public class DownloadFile extends AsyncTask<String, Void, String[]> {
     private final String TAG = "AsyncTask";
 
     static boolean success;
     AsyncResponse delegate = null;
 
     @Override
-    protected String doInBackground(String... strings) {
+    protected String[] doInBackground(String... strings) {
         Log.d(TAG, "started background Job");
         success = false;
         String fileUrl = strings[0];   // -> http://maven.apache.org/maven-1.x/maven.pdf
@@ -33,12 +29,14 @@ public class DownloadFile extends AsyncTask<String, Void, String> {
         FileDownloader.downloadFile(fileUrl, fileName);
         Log.d(TAG, "Downloaded File");
 
-        return FileScanner.scanPdf(fileUrl);
+        String[] rest = new String[strings.length-2];
+        System.arraycopy(strings, 2, rest, 0, strings.length - 2);
+        return FileScanner.scanPdf(fileUrl, rest);
 
     }
 
     @Override
-    protected void onPostExecute(String result) {
+    protected void onPostExecute(String[] result) {
         Log.d(TAG, "onPostExecution");
 
         Log.d(TAG, "delegate: "+ delegate);
@@ -93,45 +91,3 @@ class FileDownloader {
     }
 }
 
-class FileScanner{
-    static String scanPdf(String fileLocation){
-        final String TAG = "FileScanner";
-
-        String resultText = "";
-        try {
-            String parsedText="";
-            PdfReader reader = new PdfReader(fileLocation);
-            Log.d(TAG, "started PdfReader");
-            int n = reader.getNumberOfPages();
-            for (int i = 0; i <n ; i++) {
-                parsedText = parsedText+ PdfTextExtractor.getTextFromPage(reader, i+1).trim()+"\n"; //Extracting the content from the different pages
-            }
-            Log.d(TAG, "extracted Text");
-            reader.close();
-
-            int tmp =parsedText.indexOf("Betroffene");
-            String remainingText;
-            if(tmp == -1){
-                return "Error in Pdf";
-            }
-            remainingText = parsedText.substring(tmp);
-            String[] lines = remainingText.split("\n");
-
-            if(!lines[0].contains("11")){
-                return "Class 11 is not affected.";
-            }
-            for(String line : lines){
-                if(line.startsWith("11")) {
-                    resultText += line + "\n";
-                }
-            }
-            Log.d(TAG, "scanned File");
-
-        } catch (Exception e) {
-            Log.d(TAG, "Exception: "+ e);
-            e.printStackTrace();
-        }
-        return resultText;
-
-    }
-}

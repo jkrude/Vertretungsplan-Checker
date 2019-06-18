@@ -96,7 +96,16 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     public void loadText(View view){
        SharedPreferences prefs = getSharedPreferences(
                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
-       textView.setText(prefs.getString("downloadedText", "failed"));
+       String date = prefs.getString("date", "date not available");
+       String body = prefs.getString("downloadedText", "failed");
+       String out = date+ "\n"+ body;
+       textView.setText(out);
+    }
+
+    public void loadAdditionalInfo(View view){
+        SharedPreferences prefs = getSharedPreferences(
+                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
+        textView.setText(prefs.getString("additionalInformation", "failed"));
     }
 
 
@@ -106,6 +115,8 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
                 new Intent(this,AlertReceiver.class),
                 PendingIntent.FLAG_NO_CREATE) != null);
         if(alarmUp){
+            Log.d(TAG, "Alarm already active");
+
             return;
         }
         Calendar c = Calendar.getInstance();

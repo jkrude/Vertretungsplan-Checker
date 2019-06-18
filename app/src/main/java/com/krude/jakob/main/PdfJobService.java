@@ -44,27 +44,6 @@ public class PdfJobService extends JobService implements AsyncResponse{
         return true;
     }
 
-    @Override
-    public void processFinished(String output, boolean success) {
-        Log.d(TAG, "Process finished");
-        String notification_message;
-        if(output.equals("Class 11 is not affected.")){
-            notification_message = "Vertretungsplan morgen betrifft dich nicht";
-        }else{
-            notification_message = "Im Vertretungsplan könnte was relevantes stehen";
-        }
-        showNotification(getApplicationContext(), notification_message);
-        //writeToFile(output);
-
-        SharedPreferences prefs = getApplicationContext().getSharedPreferences(
-                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
-        prefs.edit().putString("downloadedText",output).apply();
-        Log.d(TAG, "edited prefs");
-        jobFinished(parameters, !success);
-        Log.d(TAG, "Job finished");
-    }
-
-
     private void startProcess(){
         Log.d(TAG, "started Process");
 
@@ -89,7 +68,7 @@ public class PdfJobService extends JobService implements AsyncResponse{
             e.printStackTrace();
         }
         //FileDownloader.downloadFile("https://www.graues-kloster.de/files/ovp_1.pdf", pdfFile);
-        asyncTask.execute(fileUrl, fileLocation);
+        asyncTask.execute(fileUrl, fileLocation, "11");
         Log.d(TAG, "started async Task");
     }
 
@@ -109,6 +88,55 @@ public class PdfJobService extends JobService implements AsyncResponse{
         Log.d(TAG, "showed notification");
     }
 
+    @Override
+    public void processFinished(String[] output, boolean success) {
+        boolean hasAdditionalInfo = false;
+        boolean hasDownloadedText = false;
 
+        Log.d(TAG, "Process finished");
+        if(success) {
+            String notification_message;
+            switch (output[0]) {
+                case FileScanner.outOfDate:
+                    notification_message = "Der Vertretungsplan ist noch nicht aktuell";
+                    hasAdditionalInfo = true;
+                    break;
+                case FileScanner.notAffected:
+                    notification_message = "Vertretungsplan morgen betrifft dich nicht";
+                    hasAdditionalInfo = true;
+                    break;
+                case FileScanner.badLayout:
+                    notification_message = "Fehler: Das Pdf ist falsch formatiert";
+
+                    break;
+                case FileScanner.ioException:
+                    notification_message = "Fehler: Auf das Pdf konnte nicht zugegriffen werden";
+                    break;
+                default:
+                    notification_message = "Der Vertretungsplan ist relevant morgen";
+                    hasAdditionalInfo = true;
+                    hasDownloadedText = true;
+                    break;
+            }
+            SharedPreferences prefs = getApplicationContext().getSharedPreferences(
+                    "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
+            if(hasDownloadedText){
+                prefs.edit().putString("downloadedText", output[0]).apply();
+            }
+            if(hasAdditionalInfo){
+                prefs.edit().putString("additionalInformation", output[1]).apply();
+            }
+            if(output.length == 3){
+                prefs.edit().putString("date",output[2]).apply();
+            }
+            showNotification(getApplicationContext(), notification_message);
+
+            Log.d(TAG, "updated prefs->downloadedText, additionalInformation");
+        }else{
+            Log.d(TAG, "Job unsuccessful");
+        }
+        jobFinished(parameters, !success);
+        Log.d(TAG, "Job finished");
+    }
 
 }
