@@ -11,9 +11,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.NotificationManagerCompat;
-import android.support.v7.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -90,6 +90,10 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     public void startAlarm(){
         DialogFragment timePickerFragment = new TimePickerFragment();
         timePickerFragment.show(getSupportFragmentManager(), "time picker");
+    }
+
+    public void showSettings(View view){
+        startActivity(new Intent(MainActivity.this, SettingsActivity.class));
     }
 
 

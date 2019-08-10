@@ -23,8 +23,8 @@ public class DownloadFile extends AsyncTask<String, Void, String[]> {
     protected String[] doInBackground(String... strings) {
         Log.d(TAG, "started background Job");
         success = false;
-        String fileUrl = strings[0];   // -> http://maven.apache.org/maven-1.x/maven.pdf
-        String fileName = strings[1];  // -> maven.pdf
+        String fileUrl = strings[0];   // -> https://www.graues-kloster.de/files/ovp_1.pdf
+        String fileName = strings[1];  // -> ovp_1.pdf
 
         FileDownloader.downloadFile(fileUrl, fileName);
         Log.d(TAG, "Downloaded File");

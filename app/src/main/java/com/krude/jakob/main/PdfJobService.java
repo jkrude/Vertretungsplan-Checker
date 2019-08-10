@@ -6,7 +6,9 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
+
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.io.File;
@@ -47,8 +49,8 @@ public class PdfJobService extends JobService implements AsyncResponse{
     private void startProcess(){
         Log.d(TAG, "started Process");
 
-        String fileUrl ="https://www.graues-kloster.de/files/ovp_1.pdf";   // -> http://maven.apache.org/maven-1.x/maven.pdf
-        String fileName = "ovp_1.pdf";  // -> maven.pdf
+        String fileUrl ="https://www.graues-kloster.de/files/ovp_1.pdf";   // -> https://www.graues-kloster.de/files/ovp_1.pdf
+        String fileName = "ovp_1.pdf";  // -> ovp_1.pdf
 
 
         SharedPreferences prefs = getApplicationContext().getSharedPreferences(
@@ -68,7 +70,7 @@ public class PdfJobService extends JobService implements AsyncResponse{
             e.printStackTrace();
         }
         //FileDownloader.downloadFile("https://www.graues-kloster.de/files/ovp_1.pdf", pdfFile);
-        asyncTask.execute(fileUrl, fileLocation, "11");
+        asyncTask.execute(fileUrl, fileLocation,"11");
         Log.d(TAG, "started async Task");
     }
 
