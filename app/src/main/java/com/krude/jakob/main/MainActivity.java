@@ -1,6 +1,7 @@
 package com.krude.jakob.main;
 
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -8,6 +9,7 @@ import android.app.TimePickerDialog;
 import android.app.job.JobScheduler;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
@@ -44,6 +46,32 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     public String relevantChanges;
 
     @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        String selected = parent.getItemAtPosition(position).toString();
+
+        // see res/strings/options for all possibilities
+        switch(selected){
+            case "Relevante Änderungen":
+                loadRelChanges();
+                break;
+            case "Alle Änderungen":
+                loadAllChanges();
+                break;
+            case "Zusätzliche Informationen":
+                loadAdditionalInfo();
+                break;
+            default:
+                throw new IllegalArgumentException();
+
+        }
+    }
+
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_settings) {// User chose the "Settings" item, show the app settings UI...
             showSettings();
@@ -67,9 +95,12 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         SharedPreferences prefs = this.getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
 
-        //TODO delete when not debugging
-        prefs.edit().clear().apply();
-        //PreferenceManager.getDefaultSharedPreferences(this).edit().clear().apply();
+        // ------ show tutorial on first Opening ------
+        if(prefs.getBoolean("showTutorial",true)) {
+            showTutorial();
+            prefs.edit().putBoolean("showTutorial",false).apply();
+        }
+
 
         prefs.edit().putInt("PDF_JOB_ID", PDF_JOB_ID).apply();
 
@@ -120,6 +151,21 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     @Override
     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
         setAlarm(hourOfDay, minute);
+    }
+
+    private void showTutorial(){
+        new AlertDialog.Builder(this)
+                .setTitle("Willkommen!")
+                .setMessage("Gebe zuerst deine Klasse in den Einstellungen ein" +
+                        " und aktiviere dann den Updater.\n" +
+                        "Wähle dazu einfach die Zeit, wann der Vertretungsplan geckeckt werden soll")
+                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        showSettings();
+                    }
+                })
+                .create().show();
     }
 
 
@@ -220,29 +266,5 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     }
 
 
-    @Override
-    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        String selected = parent.getItemAtPosition(position).toString();
 
-        // see res/strings/options for all possibilities
-        switch(selected){
-            case "Relevante Änderungen":
-                loadRelChanges();
-                break;
-            case "Alle Änderungen":
-                loadAllChanges();
-                break;
-            case "Zusätzliche Informationen":
-                loadAdditionalInfo();
-                break;
-            default:
-                throw new IllegalArgumentException();
-
-        }
-    }
-
-
-    @Override
-    public void onNothingSelected(AdapterView<?> parent) {
-    }
 }
