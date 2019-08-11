@@ -26,15 +26,14 @@ public class AlertReceiver extends BroadcastReceiver{
     private void startJob(Context context){
         JobScheduler jobScheduler =
                 (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-        ComponentName componentName =   new ComponentName(context, PdfJobService.class);
+        ComponentName componentName = new ComponentName(context, PdfJobService.class);
         SharedPreferences prefs = context.getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
         int PDF_JOB_ID = prefs.getInt("PDF_JOB_ID", 1);
 
         JobInfo jobInfo = new JobInfo.Builder(PDF_JOB_ID, componentName)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                .setPeriodic(1000*60*15)
-                //.setPeriodic(86400000 )
+                .setPeriodic(86400000 )
                 .setPersisted(true)
                 .build();
         jobScheduler.schedule(jobInfo);
