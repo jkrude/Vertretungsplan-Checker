@@ -15,6 +15,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
@@ -24,6 +25,7 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 import java.util.Calendar;
+import java.util.Set;
 
 
 public class MainActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener {
@@ -32,10 +34,9 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     private static final int PDF_JOB_ID = 1;
     private static final String TAG = "MainActivity";
 
-    public static NotificationManagerCompat notificationManager;
+    public NotificationManagerCompat notificationManager;
     private TextView textView;
-    public static String downloadedText = "";
-
+    public String relevantChanges;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,12 +45,13 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         SharedPreferences prefs = this.getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
 
+        prefs.edit().clear().apply(); //TODO delete when not debugging
         prefs.edit().putInt("PDF_JOB_ID", PDF_JOB_ID).apply();
         textView = findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
 
-        downloadedText = prefs.getString("downloadedText","No current schedule");
-        textView.setText(downloadedText);
+        relevantChanges = prefs.getString("relevantChanges","Not available yet.");
+        textView.setText(relevantChanges);
 
         Switch switchWidget = findViewById(R.id.switchWidget);
         boolean state;
@@ -88,6 +90,13 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     }
 
     public void startAlarm(){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+        String schoolClass = prefs.getString("class",null);
+        if(schoolClass == null){
+            textView.setText(new String("set class first"));
+            return;
+        }
         DialogFragment timePickerFragment = new TimePickerFragment();
         timePickerFragment.show(getSupportFragmentManager(), "time picker");
     }
@@ -101,15 +110,18 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
        SharedPreferences prefs = getSharedPreferences(
                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
        String date = prefs.getString("date", "date not available");
-       String body = prefs.getString("downloadedText", "failed");
-       String out = date+ "\n"+ body;
+       relevantChanges = prefs.getString("relevantChanges", "failed");
+
+       String out = date+ "\n"+ relevantChanges;
        textView.setText(out);
     }
 
     public void loadAdditionalInfo(View view){
         SharedPreferences prefs = getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
-        textView.setText(prefs.getString("additionalInformation", "failed"));
+        String addInfo = prefs.getString("additionalInfo", "not available");
+
+        textView.setText(addInfo);
     }
 
 

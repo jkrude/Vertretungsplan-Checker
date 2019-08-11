@@ -6,20 +6,15 @@ import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
 
 class FileScanner{
-    static final String outOfDate = "OUT_OF_DATE";
-    static final String badLayout = "BAD_LAYOUT";
-    static final String notAffected = "NOT_AFFECTED";
-    static final String ioException = "IO_EXCEPTION";
 
-
-    static String[] scanPdf(String fileLocation, String ... strings){
+    static ScanedPdf scanPdf(String fileLocation, String schoolClass, String[] visitedCourses){
         final String TAG = "FileScanner";
-        String schoolClass = strings[0];
-
-        StringBuilder resultText = new StringBuilder();
 
         StringBuilder parsedText= new StringBuilder();
         PdfReader reader;
@@ -35,26 +30,39 @@ class FileScanner{
             reader.close();
         } catch (IOException e) {
             e.printStackTrace();
-            Log.d(TAG, ioException);
-            return new String[]{ ioException, ""};
+            Log.d(TAG, ScanedPdf.State.IO_EXCEPTION.toString());
+            return new ScanedPdf(ScanedPdf.State.IO_EXCEPTION);
         }
-        int index_before_date = parsedText.indexOf("Vertretungsplan");
-        index_before_date += 17;
-        String date = parsedText.substring(index_before_date,index_before_date+5);
+        int indexBeforeDate = parsedText.indexOf("Vertretungsplan");
+        indexBeforeDate += 17;
+        String date = parsedText.substring(indexBeforeDate,indexBeforeDate+5);
         String[] parts = date.split("\\.");
         if(parts.length != 2){
-            return new String[]{badLayout, ""};
+            return new ScanedPdf(ScanedPdf.State.BAD_LAYOUT);
         }
 
-        String remainingText;
-        String additionalInfo;
-        int tmp =parsedText.indexOf("Betroffene");
-        if(tmp == -1){
-            Log.d(TAG, badLayout);
-            return new String[]{badLayout, ""};
+        List<String> allChanges;
+        List<String> additionInfo;
+        List<String> relevantChangesClass = new ArrayList<>();
+        List<String> relevantChangesCourses = new ArrayList<>();
+        
+        // ---------- check if pdf-layout is correct ----------
+        int idxOfBetroffene =parsedText.indexOf("Betroffene");
+        if(idxOfBetroffene == -1){
+            Log.d(TAG, ScanedPdf.State.BAD_LAYOUT.toString());
+            return new ScanedPdf(ScanedPdf.State.BAD_LAYOUT);
         }
-        additionalInfo = parsedText.substring(parsedText.indexOf("Online"),tmp);
+        String [] tmpAdditionInfo = parsedText.substring(
+                parsedText.indexOf("Online"),idxOfBetroffene)
+                .split("\n");
+        additionInfo = new ArrayList<>(Arrays.asList(tmpAdditionInfo));
 
+        // convert the rest of the pdf to a List of Strings representing lines in the pdf
+        allChanges = new ArrayList<>(Arrays.asList(parsedText.substring(idxOfBetroffene).split("\n")));
+        if (allChanges.size() == 0)
+            return new ScanedPdf(ScanedPdf.State.BAD_LAYOUT);
+
+        // ---------- check for the relevance of the date ----------
         int day = Integer.parseInt(parts[0]);
         int month = Integer.parseInt(parts[1]);
         Calendar c = Calendar.getInstance();
@@ -62,36 +70,50 @@ class FileScanner{
         int currentDay = c.get(Calendar.DAY_OF_MONTH);
         if (month == currentMonth){
             if(day < currentDay){
-                Log.d(TAG, outOfDate);
-                return new String[]{outOfDate, additionalInfo, date};
+                Log.d(TAG, ScanedPdf.State.OUT_OF_DATE.toString());
+                return new ScanedPdf(ScanedPdf.State.OUT_OF_DATE,date, additionInfo, allChanges);
             }
         }
-        if( month < currentMonth){ return new String[]{outOfDate, additionalInfo, date}; }
-
-
-        remainingText = parsedText.substring(tmp);
-        String[] lines = remainingText.split("\n");
-
-        if(!lines[0].contains(schoolClass)){
-            Log.d(TAG, notAffected);
-            return new String[]{notAffected,additionalInfo,date};
+        if( month < currentMonth) {
+            Log.d(TAG, ScanedPdf.State.OUT_OF_DATE.toString());
+            return new ScanedPdf(ScanedPdf.State.OUT_OF_DATE, date, additionInfo, allChanges);
         }
 
-        for(String line : lines){
+        // check for relevance regarding the class
+        if(!allChanges.get(0).contains(schoolClass)){
+            Log.d(TAG, ScanedPdf.State.NOT_AFFECTED.toString());
+            return new ScanedPdf(ScanedPdf.State.NOT_AFFECTED, date, additionInfo, allChanges);
+        }else{
+            allChanges.remove(0);
+        }
+
+        // add all lines that contain the specified class
+        for(String line : allChanges){
             if(line.startsWith(schoolClass) || line.startsWith("("+schoolClass+")")) {
-                if(strings.length > 1){
-                    for(int i = 1; i < strings.length; ++i){
-                        if(line.contains(strings[i])){
-                            resultText.append(line).append("\n");
-                        }
+                relevantChangesClass.add(line);
+            }
+        }
+        // if courses were specified check for relevance regarding those
+        if(visitedCourses != null){
+            for(String line : relevantChangesClass){
+                for(String course : visitedCourses){
+                    if(line.contains(course)){
+                        relevantChangesCourses.add(line);
                     }
-                } else{
-                    resultText.append(line).append("\n");
                 }
             }
+        }else{
+            // there are no courses specified
+            return new ScanedPdf(date, additionInfo, relevantChangesClass, allChanges);
         }
         Log.d(TAG, "scanned File");
-        return new String[]{resultText.toString(), additionalInfo, date};
+
+        if(relevantChangesCourses.size() == 0)
+            //there are courses specified and no occurrences are found -> state = not affected
+            return new ScanedPdf(ScanedPdf.State.NOT_AFFECTED, date, additionInfo, allChanges);
+        else
+            //in this case there are relevant changes regarding specified courses
+            return new ScanedPdf(date, additionInfo, relevantChangesCourses, allChanges);
 
     }
 }
