@@ -41,5 +41,13 @@
 
 
     </PreferenceCategory>
+    <PreferenceCategory app:title="@string/creator_header">
+    <Preference
+        app:key="creator"
+        app:title="@string/made_by_title"
+        app:summary="@string/made_by_summary"
+        />
+
+    </PreferenceCategory>
 
 </androidx.preference.PreferenceScreen>
