@@ -36,7 +36,7 @@
         <EditTextPreference
             app:key="chosenCourses"
             app:title="@string/courses_title"
-            app:defaultValue="@string/courses_summary"
+            app:summary="@string/courses_summary"
             app:dependency="hasCourses"/>
 
 
