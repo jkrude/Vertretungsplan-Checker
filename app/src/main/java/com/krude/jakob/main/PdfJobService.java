@@ -80,7 +80,7 @@ public class PdfJobService extends JobService implements AsyncResponse{
 
         Notification notification = new NotificationCompat.Builder(context, MainActivity.CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentTitle("TestTitle")
+                .setContentTitle("Vertretungsplan")
                 .setContentText(body)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)

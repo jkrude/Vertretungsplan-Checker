@@ -37,7 +37,7 @@ import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener, AdapterView.OnItemSelectedListener {
 
-    public static final String CHANNEL_ID = "CHANNEL_0";
+    public static final String CHANNEL_ID = "Vertretungsplan Checker";
     private static final int PDF_JOB_ID = 1;
     private static final String TAG = "MainActivity";
 
