@@ -10,15 +10,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.prefs.PreferenceChangeEvent;
 
 class FileScanner{
 
     static ScannendPdfObj scanPdf(String fileLocation, String schoolClass, String[] visitedCourses){
-        final String TAG = "FileScanner";
+        //final String TAG = "FileScanner";
 
         StringBuilder parsedText= new StringBuilder();
         PdfReader reader;
         try {
+            // ---------- convert pdf to string ----------
             reader = new PdfReader(fileLocation);
 
             //Log.d(TAG, "started PdfReader");
@@ -32,13 +35,6 @@ class FileScanner{
             e.printStackTrace();
             //Log.d(TAG, ScannendPdfObj.State.IO_EXCEPTION.toString());
             return new ScannendPdfObj(ScannendPdfObj.State.IO_EXCEPTION);
-        }
-        int indexBeforeDate = parsedText.indexOf("Vertretungsplan");
-        indexBeforeDate += 17;
-        String date = parsedText.substring(indexBeforeDate,indexBeforeDate+5);
-        String[] parts = date.split("\\.");
-        if(parts.length != 2){
-            return new ScannendPdfObj(ScannendPdfObj.State.BAD_LAYOUT);
         }
 
         List<String> allChanges;
@@ -57,6 +53,18 @@ class FileScanner{
                 .split("\n");
         additionInfo = new ArrayList<>(Arrays.asList(tmpAdditionInfo));
 
+
+        // ---------- fix misleading layout from pdf ----------
+        ArrayList<String > toBeDeleted = new ArrayList<>();
+        for(int i = 1; i < additionInfo.size()-1; ++i){
+            String line = additionInfo.get(i);
+            if(!(line.endsWith("!") || line.endsWith("?") || line.endsWith("."))) {
+                additionInfo.set(i, additionInfo.get(i) + " " +additionInfo.get(i + 1));
+                toBeDeleted.add(additionInfo.get(i+1));
+            }
+        }
+        additionInfo.removeAll(toBeDeleted);
+
         // ---------- cut out the needed part of the parsedText ----------
         String parsedTextString = parsedText.toString().substring(0,parsedText.indexOf("G r u b e r "));
         parsedTextString = parsedTextString.substring(idxOfBetroffene);
@@ -67,6 +75,13 @@ class FileScanner{
             return new ScannendPdfObj(ScannendPdfObj.State.BAD_LAYOUT);
 
         // ---------- check for the relevance of the date ----------
+        int indexBeforeDate = parsedText.indexOf("Vertretungsplan");
+        indexBeforeDate += 17;
+        String date = parsedText.substring(indexBeforeDate,indexBeforeDate+5);
+        String[] parts = date.split("\\.");
+        if(parts.length != 2){
+            return new ScannendPdfObj(ScannendPdfObj.State.BAD_LAYOUT);
+        }
         int day = Integer.parseInt(parts[0]);
         int month = Integer.parseInt(parts[1]);
         Calendar c = Calendar.getInstance();
@@ -83,7 +98,7 @@ class FileScanner{
             return new ScannendPdfObj(ScannendPdfObj.State.OUT_OF_DATE, date, additionInfo, allChanges);
         }
 
-        // check for relevance regarding the class
+        // ---------- check for relevance regarding the class ----------
         if(!allChanges.get(0).contains(schoolClass)){
             //Log.d(TAG, ScannendPdfObj.State.NOT_AFFECTED.toString());
             return new ScannendPdfObj(ScannendPdfObj.State.NOT_AFFECTED, date, additionInfo, allChanges);
@@ -91,6 +106,7 @@ class FileScanner{
             allChanges.remove(0); // remove affected classes
             allChanges.remove(0); //remove irrelevant information
         }
+
         // ---------- reformat the lines of allChanges ----------
         for(int i = 0; i < allChanges.size(); ++i){
             String line = allChanges.get(i);
@@ -110,7 +126,7 @@ class FileScanner{
                 relevantChangesClass.add(line);
             }
         }
-        // if courses were specified check for relevance regarding those
+        // ---------- if courses were specified check for relevance regarding those ----------
         if(visitedCourses != null){
             for(String line : relevantChangesClass){
                 for(String course : visitedCourses){
