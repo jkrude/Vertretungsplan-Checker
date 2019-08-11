@@ -6,11 +6,16 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
+
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * JobService to be scheduled by the JobScheduler.
@@ -20,6 +25,7 @@ public class PdfJobService extends JobService implements AsyncResponse{
     private static final String TAG = "JobService";
     private static DownloadFile asyncTask;
     private JobParameters parameters;
+    private String fileLocation;
 
     @Override
     public boolean onStartJob(JobParameters params) {
@@ -29,8 +35,6 @@ public class PdfJobService extends JobService implements AsyncResponse{
         asyncTask.delegate = this;
 
         startProcess();
-        //Intent service = new Intent(getApplicationContext(), PdfService.class);
-        //getApplicationContext().startService(service);
         return true;
     }
 
@@ -44,32 +48,11 @@ public class PdfJobService extends JobService implements AsyncResponse{
         return true;
     }
 
-    @Override
-    public void processFinished(String output, boolean success) {
-        Log.d(TAG, "Process finished");
-        String notification_message;
-        if(output.equals("Class 11 is not affected.")){
-            notification_message = "Vertretungsplan morgen betrifft dich nicht";
-        }else{
-            notification_message = "Im Vertretungsplan könnte was relevantes stehen";
-        }
-        showNotification(getApplicationContext(), notification_message);
-        //writeToFile(output);
-
-        SharedPreferences prefs = getApplicationContext().getSharedPreferences(
-                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
-        prefs.edit().putString("downloadedText",output).apply();
-        Log.d(TAG, "edited prefs");
-        jobFinished(parameters, !success);
-        Log.d(TAG, "Job finished");
-    }
-
-
     private void startProcess(){
         Log.d(TAG, "started Process");
 
-        String fileUrl ="https://www.graues-kloster.de/files/ovp_1.pdf";   // -> http://maven.apache.org/maven-1.x/maven.pdf
-        String fileName = "ovp_1.pdf";  // -> maven.pdf
+        String fileUrl ="https://www.graues-kloster.de/files/ovp_1.pdf";   // -> https://www.graues-kloster.de/files/ovp_1.pdf
+        String fileName = "ovp_1.pdf";  // -> ovp_1.pdf
 
 
         SharedPreferences prefs = getApplicationContext().getSharedPreferences(
@@ -77,7 +60,7 @@ public class PdfJobService extends JobService implements AsyncResponse{
 
 
         final File directory = getApplicationContext().getFilesDir();
-        String fileLocation = "";
+        fileLocation = "";
         File pdfFile = new File(directory, fileName);
         try {
             boolean createNewFileWorked = pdfFile.createNewFile();
@@ -89,7 +72,7 @@ public class PdfJobService extends JobService implements AsyncResponse{
             e.printStackTrace();
         }
         //FileDownloader.downloadFile("https://www.graues-kloster.de/files/ovp_1.pdf", pdfFile);
-        asyncTask.execute(fileUrl, fileLocation);
+        asyncTask.execute(fileUrl, fileLocation,"11");
         Log.d(TAG, "started async Task");
     }
 
@@ -109,6 +92,85 @@ public class PdfJobService extends JobService implements AsyncResponse{
         Log.d(TAG, "showed notification");
     }
 
+    @Override
+    public void downloadFinished(boolean success) {
+        // this is called from onPostExecute in DownloadFile
 
+        if(fileLocation == null || fileLocation.isEmpty())
+            throw new IllegalArgumentException();
+
+        SharedPreferences defPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String schoolClass = defPrefs.getString("class", null);
+        if(schoolClass == null)
+            throw new NullPointerException(); // no class specified
+        String [] visitedCourses = null;
+        if(defPrefs.getBoolean("hasCourses",false)){
+            visitedCourses = (String[])
+                    Objects.requireNonNull(
+                            defPrefs.getStringSet("courses", new HashSet<String>())).toArray();
+        }
+
+        // scan the downloaded pdf for relevance
+        ScanedPdf scanedPdf = FileScanner.scanPdf(fileLocation,schoolClass,visitedCourses);
+
+        Log.d(TAG, "Process finished");
+        if(success) {
+            String notification_message = "Unknown Error";
+            switch (scanedPdf.getState()) {
+                case OUT_OF_DATE:
+                    notification_message = "Der Vertretungsplan ist noch nicht aktuell";
+                    break;
+
+                case NOT_AFFECTED:
+                    notification_message = "Vertretungsplan morgen betrifft dich nicht";
+                    break;
+
+                case BAD_LAYOUT:
+                    notification_message = "Fehler: Das Pdf ist falsch formatiert";
+                    break;
+
+                case IO_EXCEPTION:
+                    notification_message = "Fehler: Auf das Pdf konnte nicht zugegriffen werden";
+                    break;
+
+                case AFFECTED:
+                    notification_message = "Der Vertretungsplan ist relevant morgen";
+                    break;
+            }
+            SharedPreferences prefs = getApplicationContext().getSharedPreferences(
+                    "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
+
+            List<String> allChanges = scanedPdf.getAllChanges();
+            if(allChanges != null)
+                prefs.edit().putString("allChanges", transformListToString(allChanges)).apply();
+
+            List<String> relChanges = scanedPdf.getRelevantChanges();
+            if(relChanges != null)
+                prefs.edit().putString("relevantChanges", transformListToString(relChanges)).apply();
+
+            List<String> addInfo = scanedPdf.getAdditionalInfo();
+            if(addInfo != null)
+                prefs.edit().putString("additionalInfo", transformListToString(addInfo)).apply();
+            String date = scanedPdf.getDate();
+            if(date != null)
+                prefs.edit().putString("date",date).apply();
+
+            showNotification(getApplicationContext(), notification_message);
+
+            Log.d(TAG, "updated prefs->relevantChanges, additionalInformation");
+        }else{
+            Log.d(TAG, "Job unsuccessful");
+        }
+        jobFinished(parameters, !success);
+        Log.d(TAG, "Job finished");
+    }
+
+    private String transformListToString(List<String> list){
+        StringBuilder stringBuilder = new StringBuilder();
+        for(String string : list){
+            stringBuilder.append(string).append("\n");
+        }
+        return stringBuilder.toString();
+    }
 
 }

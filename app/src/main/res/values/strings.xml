@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Test</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Preference Titles -->
+    <string name="class_header">Klasse</string>
+    <string name="courses_header">Kurse</string>
+
+    <!-- Settings Preferences -->
+    <string name="class_title">Deine Klasse</string>
+    <string name="hasCourses_title">Spezifiziere Kurse</string>
+
+
 </resources>

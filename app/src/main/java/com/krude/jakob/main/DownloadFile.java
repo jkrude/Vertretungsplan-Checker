@@ -3,9 +3,6 @@ package com.krude.jakob.main;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.itextpdf.text.pdf.PdfReader;
-import com.itextpdf.text.pdf.parser.PdfTextExtractor;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -16,122 +13,79 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 
-
-public class DownloadFile extends AsyncTask<String, Void, String> {
+public class DownloadFile extends AsyncTask<String, Void, Void> {
     private final String TAG = "AsyncTask";
 
-    static boolean success;
+    private static boolean success;
     AsyncResponse delegate = null;
 
     @Override
-    protected String doInBackground(String... strings) {
+    protected Void doInBackground(String... strings) {
         Log.d(TAG, "started background Job");
         success = false;
-        String fileUrl = strings[0];   // -> http://maven.apache.org/maven-1.x/maven.pdf
-        String fileName = strings[1];  // -> maven.pdf
+        String fileUrl = strings[0];   // -> https://www.graues-kloster.de/files/ovp_1.pdf
+        String fileName = strings[1];  // -> ovp_1.pdf
 
-        FileDownloader.downloadFile(fileUrl, fileName);
+        FileDownloader fileDownloader = new FileDownloader();
+        fileDownloader.downloadFile(fileUrl,fileName);
         Log.d(TAG, "Downloaded File");
 
-        return FileScanner.scanPdf(fileUrl);
+        return null;
 
     }
 
     @Override
-    protected void onPostExecute(String result) {
+    protected void onPostExecute(Void aVoid) {
         Log.d(TAG, "onPostExecution");
 
-        Log.d(TAG, "delegate: "+ delegate);
+        Log.d(TAG, "delegate: " + delegate);
 
-        delegate.processFinished(result, success);
+        delegate.downloadFinished(success);
     }
-}
 
+    private class FileDownloader {
+        private static final int MEGABYTE = 1024 * 1024;
 
-class FileDownloader {
-    private static final int MEGABYTE = 1024 * 1024;
+        private void downloadFile(String fileUrl, String directory) {
+            final String TAG = "FileDownloader";
+            Log.d(TAG, "started Download");
 
-    static void downloadFile(String fileUrl, String directory) {
-        final String TAG = "FileDownloader";
-        Log.d(TAG, "started Download");
+            try {
 
-        try {
+                URL url = new URL(fileUrl);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.connect();
 
-            URL url = new URL(fileUrl);
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.connect();
+                Log.d(TAG, "connected to server");
 
-            Log.d(TAG, "connected to server");
+                InputStream inputStream = urlConnection.getInputStream();
+                FileOutputStream fileOutputStream = new FileOutputStream(new File(directory));
+                int totalSize = urlConnection.getContentLength();
 
-            InputStream inputStream = urlConnection.getInputStream();
-            FileOutputStream fileOutputStream = new FileOutputStream(new File(directory));
-            int totalSize = urlConnection.getContentLength();
-
-            byte[] buffer = new byte[MEGABYTE];
-            int bufferLength = 0;
-            while ((bufferLength = inputStream.read(buffer)) > 0) {
-                fileOutputStream.write(buffer, 0, bufferLength);
-            }
-            fileOutputStream.close();
-
-            Log.d(TAG, "done downloading and closed file");
-
-            DownloadFile.success = true;
-
-        } catch (FileNotFoundException e) {
-            Log.d(TAG, "FileNotFoundException");
-            System.err.print("Could not find File");
-            //e.printStackTrace();
-        } catch (MalformedURLException e) {
-            Log.d(TAG, "MalformedURLException");
-            System.err.print("Bad Url");
-            //e.printStackTrace();
-        } catch (IOException e) {
-            Log.d(TAG, "IOException");
-            //e.printStackTrace();
-        }
-    }
-}
-
-class FileScanner{
-    static String scanPdf(String fileLocation){
-        final String TAG = "FileScanner";
-
-        String resultText = "";
-        try {
-            String parsedText="";
-            PdfReader reader = new PdfReader(fileLocation);
-            Log.d(TAG, "started PdfReader");
-            int n = reader.getNumberOfPages();
-            for (int i = 0; i <n ; i++) {
-                parsedText = parsedText+ PdfTextExtractor.getTextFromPage(reader, i+1).trim()+"\n"; //Extracting the content from the different pages
-            }
-            Log.d(TAG, "extracted Text");
-            reader.close();
-
-            int tmp =parsedText.indexOf("Betroffene");
-            String remainingText;
-            if(tmp == -1){
-                return "Error in Pdf";
-            }
-            remainingText = parsedText.substring(tmp);
-            String[] lines = remainingText.split("\n");
-
-            if(!lines[0].contains("11")){
-                return "Class 11 is not affected.";
-            }
-            for(String line : lines){
-                if(line.startsWith("11")) {
-                    resultText += line + "\n";
+                byte[] buffer = new byte[MEGABYTE];
+                int bufferLength = 0;
+                while ((bufferLength = inputStream.read(buffer)) > 0) {
+                    fileOutputStream.write(buffer, 0, bufferLength);
                 }
+                fileOutputStream.close();
+
+                Log.d(TAG, "done downloading and closed file");
+
+                DownloadFile.success = true;
+
+            } catch (FileNotFoundException e) {
+                Log.d(TAG, "FileNotFoundException");
+                System.err.print("Could not find File");
+                //e.printStackTrace();
+            } catch (MalformedURLException e) {
+                Log.d(TAG, "MalformedURLException");
+                System.err.print("Bad Url");
+                //e.printStackTrace();
+            } catch (IOException e) {
+                Log.d(TAG, "IOException");
+                //e.printStackTrace();
             }
-            Log.d(TAG, "scanned File");
-
-        } catch (Exception e) {
-            Log.d(TAG, "Exception: "+ e);
-            e.printStackTrace();
         }
-        return resultText;
-
     }
+
 }
