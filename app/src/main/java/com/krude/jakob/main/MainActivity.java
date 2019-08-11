@@ -15,6 +15,8 @@ import androidx.fragment.app.DialogFragment;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -38,6 +40,9 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     private TextView textView;
     public String relevantChanges;
 
+    EditTextPreference txtPrefClass;
+    EditTextPreference txtPrefCourses;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,7 +50,10 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         SharedPreferences prefs = this.getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
 
-        prefs.edit().clear().apply(); //TODO delete when not debugging
+        //TODO delete when not debugging
+        prefs.edit().clear().apply();
+        //PreferenceManager.getDefaultSharedPreferences(this).edit().clear().apply();
+
         prefs.edit().putInt("PDF_JOB_ID", PDF_JOB_ID).apply();
         textView = findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
@@ -83,7 +91,6 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         prefs.edit().putBoolean("switchState", switchWidget.isChecked()).apply();
     }
 
-
     @Override
     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
         setAlarm(hourOfDay, minute);
@@ -110,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
        SharedPreferences prefs = getSharedPreferences(
                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
        String date = prefs.getString("date", "date not available");
-       relevantChanges = prefs.getString("relevantChanges", "failed");
+       relevantChanges = prefs.getString("relevantChanges", "Es gibt noch nichts relevantes.");
 
        String out = date+ "\n"+ relevantChanges;
        textView.setText(out);
@@ -119,7 +126,7 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     public void loadAdditionalInfo(View view){
         SharedPreferences prefs = getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
-        String addInfo = prefs.getString("additionalInfo", "not available");
+        String addInfo = prefs.getString("additionalInfo", "Noch nicht verfügbar");
 
         textView.setText(addInfo);
     }
