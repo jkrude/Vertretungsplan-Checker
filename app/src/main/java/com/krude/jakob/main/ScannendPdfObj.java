@@ -2,7 +2,7 @@ package com.krude.jakob.main;
 
 import java.util.List;
 
-public class ScanedPdf {
+public class ScannendPdfObj {
 
     public enum State {
         OUT_OF_DATE,
@@ -20,7 +20,7 @@ public class ScanedPdf {
     private State state;
 
     // if everything is known and all worked out, the state should be AFFECTED
-    public ScanedPdf(String date, List<String> additionalInfo, List<String> relevantChanges, List<String> allChanges) {
+    public ScannendPdfObj(String date, List<String> additionalInfo, List<String> relevantChanges, List<String> allChanges) {
         this.date = date;
         this.additionalInfo = additionalInfo;
         this.relevantChanges = relevantChanges;
@@ -29,7 +29,7 @@ public class ScanedPdf {
     }
 
     // if the State is not NOT_AFFECTED or OUT_OF_DATE
-    public ScanedPdf(State state, String date,List<String> additionalInfo, List<String> allChanges) {
+    public ScannendPdfObj(State state, String date, List<String> additionalInfo, List<String> allChanges) {
         this.date = date;
         this.additionalInfo = additionalInfo;
         this.allChanges = allChanges;
@@ -38,7 +38,7 @@ public class ScanedPdf {
     }
 
 
-    public ScanedPdf(State state) {
+    public ScannendPdfObj(State state) {
         this.state = state;
     }
 

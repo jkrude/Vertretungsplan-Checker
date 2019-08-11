@@ -13,9 +13,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * JobService to be scheduled by the JobScheduler.
@@ -114,7 +112,7 @@ public class PdfJobService extends JobService implements AsyncResponse{
         }
 
         // scan the downloaded pdf for relevance
-        ScanedPdf scanedPdf = FileScanner.scanPdf(fileLocation,schoolClass,visitedCourses);
+        ScannendPdfObj scanedPdf = FileScanner.scanPdf(fileLocation,schoolClass,visitedCourses);
 
         Log.d(TAG, "Process finished");
         if(success) {
