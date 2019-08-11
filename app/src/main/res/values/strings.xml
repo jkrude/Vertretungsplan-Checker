@@ -3,12 +3,27 @@
     <string name="title_activity_settings">Settings</string>
 
     <!-- Preference Titles -->
-    <string name="class_header">Klasse</string>
-    <string name="courses_header">Kurse</string>
+    <string name="class_header"> Klasse </string>
+    <string name="courses_header"> Kurse </string>
 
     <!-- Settings Preferences -->
-    <string name="class_title">Deine Klasse</string>
-    <string name="hasCourses_title">Spezifiziere Kurse</string>
+    <string name="class_title"> Deine Klasse </string>
+    <string name="hasCourses_title"> Spezifiziere Kurse </string>
+    <string name="courses_title"> Deine Kurse </string>
 
+    <!-- Settings Summaries-->
+    <string name="class_summary"> z.B. UIIIa </string>
+    <string name="hasCourses_summary"> Betrifft nur die Oberstufe </string>
+    <string name="courses_summary"> Trenne die Kurse mit Kommata, z.B. LaLK1, pwGK1 </string>
+
+    <!-- buttons and switches-->
+    <string name="toggle_switch"> Status </string>
+    <string name="set_class_first">Wähle zuerst eine Klasse in den Optionen</string>
+
+    <string-array name="options">
+        <item> Relevante Änderungen </item>
+        <item> Alle Änderungen </item>
+        <item> Zusätzliche Informationen </item>
+    </string-array>
 
 </resources>

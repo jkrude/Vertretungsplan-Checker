@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
+
 import androidx.fragment.app.DialogFragment;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,17 +19,21 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 import java.util.Calendar;
-import java.util.Set;
 
 
-public class MainActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener {
+public class MainActivity extends AppCompatActivity implements TimePickerDialog.OnTimeSetListener, AdapterView.OnItemSelectedListener {
 
     public static final String CHANNEL_ID = "CHANNEL_0";
     private static final int PDF_JOB_ID = 1;
@@ -39,18 +44,47 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
     public String relevantChanges;
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_settings) {// User chose the "Settings" item, show the app settings UI...
+            showSettings();
+            return true;
+        }// If we got here, the user's action was not recognized.
+        // Invoke the superclass to handle it.
+        return super.onOptionsItemSelected(item);
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.actionbar, menu);
+        return true;
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         SharedPreferences prefs = this.getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
 
-        prefs.edit().clear().apply(); //TODO delete when not debugging
+        //TODO delete when not debugging
+        prefs.edit().clear().apply();
+        //PreferenceManager.getDefaultSharedPreferences(this).edit().clear().apply();
+
         prefs.edit().putInt("PDF_JOB_ID", PDF_JOB_ID).apply();
+
+        // ------ all views and widgets ------
         textView = findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
+        // spinner with options witch text should be loaded
+        Spinner spinner = findViewById(R.id.choose_what_to_show);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.options,R.layout.spinner_text);
+        adapter.setDropDownViewResource(R.layout.spinner_text);
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(this);
 
-        relevantChanges = prefs.getString("relevantChanges","Not available yet.");
+        relevantChanges = prefs.getString("relevantChanges","Noch nicht verfügbar");
         textView.setText(relevantChanges);
 
         Switch switchWidget = findViewById(R.id.switchWidget);
@@ -83,43 +117,56 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         prefs.edit().putBoolean("switchState", switchWidget.isChecked()).apply();
     }
 
-
     @Override
     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
         setAlarm(hourOfDay, minute);
     }
 
+
     public void startAlarm(){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
         String schoolClass = prefs.getString("class",null);
-        if(schoolClass == null){
-            textView.setText(new String("set class first"));
+        if(schoolClass == null || schoolClass.isEmpty()){
+            textView.setText(getText(R.string.set_class_first));
             return;
         }
         DialogFragment timePickerFragment = new TimePickerFragment();
         timePickerFragment.show(getSupportFragmentManager(), "time picker");
     }
 
-    public void showSettings(View view){
+
+    public void showSettings(){
         startActivity(new Intent(MainActivity.this, SettingsActivity.class));
     }
 
 
-    public void loadText(View view){
+    public void loadRelChanges(){
        SharedPreferences prefs = getSharedPreferences(
                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
-       String date = prefs.getString("date", "date not available");
-       relevantChanges = prefs.getString("relevantChanges", "failed");
+       String date = prefs.getString("date", "");
+       relevantChanges = prefs.getString("relevantChanges", "Noch nicht verfügbar");
 
        String out = date+ "\n"+ relevantChanges;
        textView.setText(out);
     }
 
-    public void loadAdditionalInfo(View view){
+
+    public void loadAllChanges(){
         SharedPreferences prefs = getSharedPreferences(
                 "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
-        String addInfo = prefs.getString("additionalInfo", "not available");
+        String date = prefs.getString("date", "");
+        relevantChanges = prefs.getString("allChanges", "Noch nicht verfügbar");
+
+        String out = date+ "\n"+ relevantChanges;
+        textView.setText(out);
+    }
+
+
+    public void loadAdditionalInfo(){
+        SharedPreferences prefs = getSharedPreferences(
+                "com.krude.jakob.vertretungsplan", Context.MODE_PRIVATE);
+        String addInfo = prefs.getString("additionalInfo", "Noch nicht verfügbar");
 
         textView.setText(addInfo);
     }
@@ -172,4 +219,30 @@ public class MainActivity extends AppCompatActivity implements TimePickerDialog.
         Log.d(TAG, "canceled Job");
     }
 
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        String selected = parent.getItemAtPosition(position).toString();
+
+        // see res/strings/options for all possibilities
+        switch(selected){
+            case "Relevante Änderungen":
+                loadRelChanges();
+                break;
+            case "Alle Änderungen":
+                loadAllChanges();
+                break;
+            case "Zusätzliche Informationen":
+                loadAdditionalInfo();
+                break;
+            default:
+                throw new IllegalArgumentException();
+
+        }
+    }
+
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+    }
 }

@@ -105,9 +105,12 @@ public class PdfJobService extends JobService implements AsyncResponse{
             throw new NullPointerException(); // no class specified
         String [] visitedCourses = null;
         if(defPrefs.getBoolean("hasCourses",false)){
-            visitedCourses = (String[])
-                    Objects.requireNonNull(
-                            defPrefs.getStringSet("courses", new HashSet<String>())).toArray();
+            String tmpVisitedCourses = defPrefs.getString("chosenCourses", null);
+            if(tmpVisitedCourses == null)
+                throw new NullPointerException();
+            tmpVisitedCourses = tmpVisitedCourses.replace(" ", "").replace("\n", "");
+            visitedCourses = tmpVisitedCourses.split(",");
+            Log.d(TAG, "visitedCourses: "+tmpVisitedCourses);
         }
 
         // scan the downloaded pdf for relevance

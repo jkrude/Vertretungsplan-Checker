@@ -21,7 +21,8 @@
         <EditTextPreference
             app:key="class"
             app:title="@string/class_title"
-            app:useSimpleSummaryProvider="true" />
+            app:useSimpleSummaryProvider="true"
+            app:summary="@string/class_summary"/>
 
     </PreferenceCategory>
 
@@ -29,8 +30,14 @@
 
         <SwitchPreferenceCompat
             app:key="hasCourses"
-            app:title="@string/hasCourses_title" />
+            app:title="@string/hasCourses_title"
+            app:summary="@string/hasCourses_summary" />
 
+        <EditTextPreference
+            app:key="chosenCourses"
+            app:title="@string/courses_title"
+            app:summary="@string/courses_summary"
+            app:dependency="hasCourses"/>
 
 
     </PreferenceCategory>
