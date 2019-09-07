@@ -75,9 +75,11 @@ class FileScanner{
             return new ScannendPdfObj(ScannendPdfObj.State.BAD_LAYOUT);
 
         // ---------- check for the relevance of the date ----------
-        int indexBeforeDate = parsedText.indexOf("Vertretungsplan");
-        indexBeforeDate += 17;
-        String date = parsedText.substring(indexBeforeDate,indexBeforeDate+5);
+        int idxBeforeDate = parsedText.indexOf("Vertretungsplan");
+        idxBeforeDate += 17;
+        int idxAfterDate = parsedText.indexOf("/",idxBeforeDate);
+        String date = parsedText.substring(idxBeforeDate,idxAfterDate);
+        date = date.replace(" ", "");
         String[] parts = date.split("\\.");
         if(parts.length != 2){
             return new ScannendPdfObj(ScannendPdfObj.State.BAD_LAYOUT);
